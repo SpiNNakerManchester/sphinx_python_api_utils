@@ -71,7 +71,7 @@ def get_file(obj):
     if hasattr(obj, "__file__"):
         return obj.__file__
     if hasattr(obj, "__module__") and obj.__module__ is not None:
-        _, module, _ = import_by_name(obj.__module__)
+        _, module, _, _ = import_by_name(obj.__module__)
         return get_file(module)
     return None
 
@@ -129,7 +129,7 @@ def split_into_abstract_and_non_abstract(cls, items, abstract_property):
 
 def format_directive(module, package=None):
     """Create the automodule directive and add the options."""
-    _, obj, _ = import_by_name(makename(package, module))
+    _, obj, _, _ = import_by_name(makename(package, module))
     functions = get_public_members(obj, 'function')
     classes = get_public_members(obj, 'class')
     exceptions = get_public_members(obj, 'exception')
@@ -157,7 +157,7 @@ def format_directive(module, package=None):
         directive += '.. autoclass:: %s\n' % cls
         directive += '    :show-inheritance:\n\n'
 
-        _, cls_obj, _ = import_by_name(makename(package,
+        _, cls_obj, _, _ = import_by_name(makename(package,
                 "%s.%s" % (module, cls)))
         attributes = get_public_members(cls_obj, 'attribute')
         methods = get_public_members(cls_obj, 'method')
