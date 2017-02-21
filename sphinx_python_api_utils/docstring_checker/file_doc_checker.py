@@ -1,5 +1,5 @@
 from enum import Enum
-
+import re
 from doc_exception import DocException
 
 CodeState = Enum(
@@ -15,6 +15,7 @@ CodeState = Enum(
         ("DOCS_START", "doc start"),
         ("DOCS_START_AFTER_BLANK", "after blank"),
         ("DOCS_DECLARATION", "declarion"),
+        ("COMMENT", "comment"),
         # ("DOCS_END", "end"),
         # ("IN_PARAM", "param"),
         ]
@@ -26,15 +27,22 @@ _HIDDEN = _WRONG + 1
 _UNEXPECTED = _HIDDEN + 1
 _MISSING = _UNEXPECTED + 1
 _NO_DOCS = _MISSING + 1
+_STYLE = _NO_DOCS + 1
 
 OK = None
+INIT = "init"
+PRIVATE = "private"
+PUBLIC = "public"
+
+
+def rreplace(s, old, new, occurrence):
+    li = s.rsplit(old, occurrence)
+    return new.join(li)
 
 
 class FileDocChecker:
     """" test for class start
 
-    :param python_path: path to file to check
-    can be more than one line long
     """
 
     _python_path = None
@@ -43,8 +51,16 @@ class FileDocChecker:
     _lineNum = 0
     _param_indent = None
     _previous_indent = None
+    _def_string = ""
+    _def_type = None
+    _def_params = []
 
     def __init__(self, python_path, debug=False):
+        """"
+
+        :param python_path: path to file to check
+            can be more than one line long
+        """
         print python_path
         self._python_path = python_path
         self._debug = debug
@@ -86,6 +102,8 @@ class FileDocChecker:
             self._check_in_doc_start_after_blank(line)
         elif self._code_state == CodeState.DOCS_DECLARATION:
             self._check_in_doc_declaration(line)
+        elif self._code_state == CodeState.COMMENT:
+            self._check_in_comment(line)
         # elif self._code_state == CodeState.DOCS_END:
         #    self._check_in_doc_end(line)
         # elif self._code_state == CodeState.IN_PARAM:
@@ -97,11 +115,33 @@ class FileDocChecker:
             print str(self._lineNum) + "   " + str(self._code_state)
 
     def _check_in_start(self, line):
+        if "\"\"\"" in line:
+            return self._verify_doc_start(line, CodeState.CLASS_DOC,
+                                          CodeState.START)
         stripped = line.strip()
-        if "\"\"\"" in stripped:
-            self._code_state = CodeState.CLASS_DOC
-            return OK
         return self._code_check(stripped)
+
+    def _verify_doc_start(self, line, doc_state, none_doc_state):
+        stripped = line.strip()
+        if stripped.startswith("r\"\"\""):
+            stripped = stripped[1:]
+        elif not stripped.startswith("\"\"\""):
+            msg = "unexpected doc tags"
+            return self._report(line, msg, _UNEXPECTED)
+        parts = stripped.split("\"\"\"")
+        if len(parts) <= 2:
+            self._code_state = doc_state
+            return OK
+        elif len(parts) == 3:
+            if len(parts[2]) == 0:
+                self._code_state = none_doc_state
+                return OK
+            else:
+                msg = "unexpected stuff after one line doc end"
+                return self._report(line, msg, _UNEXPECTED)
+        else:
+            msg = "three doc tags found in one line"
+            return self._report(line, msg, _UNEXPECTED)
 
     def _code_check(self, stripped):
         if stripped.startswith("class"):
@@ -111,10 +151,12 @@ class FileDocChecker:
         return OK
 
     def _check_in_code(self, line):
+        if "\"\"\"" in line:
+            return self._verify_doc_start(line, CodeState.COMMENT,
+                                          CodeState.CODE)
         stripped = line.strip()
-        if "\"\"\"" in stripped:
-            return self._report(line, "unexpected doc", _HIDDEN)
         return self._code_check(stripped)
+
 
     def _check_in_class(self, line):
         if line.endswith(":"):
@@ -129,22 +171,11 @@ class FileDocChecker:
                 return OK
 
     def _check_after_class(self, line):
+        if "\"\"\"" in line:
+            return self._verify_doc_start(line, CodeState.CLASS_DOC,
+                                          CodeState.CODE)
         stripped = line.strip()
-        if stripped.startswith("\"\"\""):
-            parts = stripped.split("\"\"\"")
-            if len(parts) <= 2:
-                self._code_state = CodeState.CLASS_DOC
-                return OK
-            elif len(parts) == 3:
-                if len(parts[2]) == 0:
-                    self._code_state = CodeState.CODE
-                else:
-                    msg = "unexpected stuff after one line doc end"
-                    return self._report(line, msg, _UNEXPECTED)
-            else:
-                msg = "three doc tags found in one line"
-                return self._report(line, msg, _UNEXPECTED)
-        elif len(stripped) == 0:
+        if len(stripped) == 0:
             return OK
         else:
             self._code_state = CodeState.CODE
@@ -161,12 +192,60 @@ class FileDocChecker:
 
     def _check_in_def(self, line):
         self._code_state = CodeState.IN_DEF
+        self._def_string += line
         if line.endswith(":"):
             self._code_state = CodeState.AFTER_DEF
-            return OK
+            return self._extract_params(line)
         if "\"\"\"" in line:
             msg = "unexpected doc start in def declaration"
             return self._report(line, msg, _UNEXPECTED)
+        return OK
+
+    def _extract_params(self, line):
+        declaration = self._def_string.replace("(", " ", 1)
+        declaration = rreplace(declaration, ")", " ",1)
+        declaration = declaration.replace(",", " ")
+        declaration = re.sub("\(.*?\)", "junk", declaration)
+        declaration = re.sub(' +', ' ', declaration)
+        self._def_string = ""
+        parts = declaration.split(" ")
+        # print parts
+        if (parts[0] != "def"):
+            msg = "unexpected start in def declaration"
+            return self._report(line, msg, _UNEXPECTED)
+        if (parts[1] == "__init__"):
+            self._def_type = INIT
+        elif (parts[1][0] == "_"):
+            self._def_type = PRIVATE
+        else:
+            self._def_type = PUBLIC
+        self._def_params = []
+        if (parts[2] == "self"):
+            start = 3
+        else:
+            start = 2
+        for part in parts[start:-1]:
+            if (part[0] == "=") or (part[-1] == "="):
+                msg = "E251 unexpected spaces around keyword/parameter equals"
+                return self._report(line, msg, _UNEXPECTED)
+            param_parts = part.split("=")
+            if len(param_parts) > 2:
+                msg = "Multiple = found in one paramter"
+                return self._report(line, msg, _UNEXPECTED)
+            name = param_parts[0]
+            if name[0] == "*":
+                if len(name) == 1:
+                    msg = "* only parameter name"
+                    return self._report(line, msg, _UNEXPECTED)
+                if name[1] == "*":
+                    name = name[2:]
+                else:
+                    name = name[1:]
+            self._def_params.append(name)
+        if (parts[-1] != ":"):
+            msg = "No : found at end of def declaration"
+            return self._report(line, msg, _UNEXPECTED)
+        # print self._def_params
         return OK
 
     def _check_after_def(self, line):
@@ -189,7 +268,8 @@ class FileDocChecker:
         self._code_state = CodeState.CODE
         return OK
 
-    def _check_in_doc_start(self, line):
+    def _check_in_doc_start(self,
+                            line):
         stripped = line.strip()
         if "\"\"\"" in stripped:
             return self._end_docs(line)
@@ -208,7 +288,7 @@ class FileDocChecker:
         if stripped == ("\"\"\""):
             return OK
         msg = "Closing quotes should be on their own line (See per-0257)"
-        return self._report(line, msg, _UNEXPECTED)
+        return self._report(line, msg, _STYLE)
 
     def _check_in_doc_start_after_blank(self, line):
         stripped = line.strip()
@@ -253,21 +333,17 @@ class FileDocChecker:
             self._previous_indent = None
             return self._verify_raise(line)
         if stripped.startswith(":"):
-            if not stripped.startswith(":py"):
-                msg = "Unxpected : line in param doc section"
-                return self._report(line, msg, _CRITICAL)
+            if stripped.startswith(":py"):
+                return OK
+            if stripped == "::":
+                return OK
+            msg = "Unxpected : line in param doc section"
+            return self._report(line, msg, _CRITICAL)
         if indent <= self._param_indent:
             print self._param_indent
             print indent
             msg = "Unxpected non indented line in param doc section"
             return self._report(line, msg, _CRITICAL)
-        # if self._previous_indent == None:
-        #    self._previous_indent = indent
-        #     return OK
-        # if self._previous_indent == indent:
-        #     return OK
-        # msg = "Unxpected indent line in param doc section. Only 1 level allowed"
-        # return self._report(line, msg, _CRITICAL)
         return OK
 
     def _verify_param(self, line):
@@ -282,9 +358,19 @@ class FileDocChecker:
         if parts[1][-1] != ":":
             if len(parts) > 2:
                 if parts[2][-1] == ":":
-                    return OK
+                    return self._verify_param_name(parts[2], line)
             return self._report(line, "paramater name must end with :",
                                 _CRITICAL)
+        else:
+            return self._verify_param_name(parts[1], line)
+        return OK
+
+    def _verify_param_name(self, name, line):
+        name = name[:-1]
+        if not name in self._def_params:
+            msg = "param " + name + " not in parameter list " + \
+                  str(self._def_params)
+            return self._report(line, msg, _CRITICAL)
         return OK
 
     def _verify_type(self, line):
@@ -299,6 +385,10 @@ class FileDocChecker:
         if parts[1][-1] != ":":
             return self._report(line, "in type paramater_name must end with :",
                                 _CRITICAL)
+        else:
+            report = self._verify_param_name(parts[1], line)
+            if report != OK:
+                return report
         if len(parts) == 2:
             # return self._report(line, ":type requires a param_name: type",
             #                   _MISSING)
@@ -330,7 +420,7 @@ class FileDocChecker:
         if len(parts) == 1:
             return self._report(line, ":raise requires a type",
                                 _UNEXPECTED)
-         # if parts[1].lower().startswith("none"):
+        # if parts[1].lower().startswith("none"):
         #    return self._report(line, "Do not use :raise None", _UNEXPECTED)
         return OK
 
@@ -338,8 +428,8 @@ class FileDocChecker:
         stripped = line.strip()
         parts = stripped.split(' ')
         if len(parts) == 1:
-            return self._report(line, "singleton :return possible :rtype: None",
-                                _UNEXPECTED)
+            msg = "singleton :return possible :rtype: None"
+            return self._report(line, msg, _UNEXPECTED)
         if parts[0] != ":return":
             if parts[0] == ":return:":
                 if parts[1].lower() == "none":
@@ -359,6 +449,11 @@ class FileDocChecker:
                                 _MISSING)
         return OK
 
+    def _check_in_comment(self, line):
+        stripped = line.strip()
+        if "\"\"\"" in stripped:
+            return self._end_docs(line)
+        return OK
 
 #    def _check_in_param(self, line):
 #        stripped = line.strip()
@@ -395,9 +490,12 @@ class FileDocChecker:
         if level < _MISSING or self._debug:
             raise DocException(self._python_path, msg, self._lineNum)
 
+
 if __name__ == "__main__":
     import os
     path = os.path.realpath(__file__)
 
+    path = "/brenninc/spinnaker/spalloc/spalloc/states.py"
     file_doc_checker = FileDocChecker(path, True);
-    file_doc_checker.check_all_docs();
+    # file_doc_checker = FileDocChecker(path, False)
+    file_doc_checker.check_all_docs()

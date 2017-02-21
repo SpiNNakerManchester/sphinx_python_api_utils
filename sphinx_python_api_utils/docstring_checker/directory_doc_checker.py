@@ -21,6 +21,8 @@ def check_directory(path):
             dirs.remove("unittests")
         if "uinit_test_objects" in dirs:
             dirs.remove("uinit_test_objects")
+        if "docs" in dirs:
+            dirs.remove("docs")
 
 
 if __name__ == "__main__":
