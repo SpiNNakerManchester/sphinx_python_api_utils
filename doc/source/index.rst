@@ -88,6 +88,18 @@ DataSpecification_individual_docs_
 .. _DataSpecification_github: https://github.com/SpiNNakerManchester/DataSpecification
 .. _DataSpecification_individual_docs: http://dataspecification.readthedocs.io
 
+spalloc
+-------
+Spalloc is a Python library and set of command-line programs for requesting SpiNNaker machines from a spalloc server.
+
+The spalloc module uses a different documentation style so is not included here.
+
+Their documenation can be found at: spalloc_readthedocs_
+
+spalloc_github_
+
+.. _spalloc_github: https://github.com/SpiNNakerManchester/spalloc
+.. _spalloc_readthedocs: http://spalloc.readthedocs.io
 
 SpiNNFrontEndCommon
 -------------------
@@ -172,10 +184,23 @@ sPyNNakerExtraModelsPlugin_individual_docs_
 .. _sPyNNakerExtraModelsPlugin_github: https://github.com/SpiNNakerManchester/sPyNNakerExtraModelsPlugin
 .. _sPyNNakerExtraModelsPlugin_individual_docs: http://spynnakerextramodelsplugin.readthedocs.io
 
+spalloc_server
+--------------
+A SpiNNaker machine management application which manages the partitioning and allocation of large SpiNNaker machines
+into smaller fragments for many simultaneous users.
+
+The spalloc_server module uses a different documentation style so is not included here.
+
+Their documenation can be found at: spalloc_server_readthedocs_
+
+spalloc_server_github_
+
+.. _spalloc_server_github: https://github.com/SpiNNakerManchester/spalloc_server
+.. _spalloc_server_readthedocs: http://spalloc-server.readthedocs.io
+
 Indices and tables
 ------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
