@@ -1,10 +1,12 @@
 import os
+import sys
 
 from file_doc_checker import FileDocChecker
 
-_EXCLUDES = ["make_rst.py","va_benchmark.py"]
+_EXCLUDES = ["va_benchmark.py"]
 
 def check_directory(path):
+    doc_errors = ""
     for root, dirs, files in os.walk(os.path.realpath(path), topdown=True):
         for name in files:
             if name.endswith(".py"):
@@ -12,7 +14,7 @@ def check_directory(path):
                     print "ignoring: " + name
                 else:
                     fileDocChecker = FileDocChecker(os.path.join(root, name))
-                    fileDocChecker.check_all_docs()
+                    doc_errors+= fileDocChecker.check_all_docs()
 
         # if "integration_tests" in dirs:
         #    dirs.remove("integration_tests")
@@ -37,11 +39,14 @@ def check_directory(path):
         # differenc docstring style
         if root.endswith("spalloc_server") and "docs" in dirs:
             dirs.remove("docs")
+    if len(doc_errors) > 0:
+        print "******* ERRORS FOUND **********"
+        print doc_errors
+        print "******* ERRORS FOUND **********"
+        sys.exit(1)
+
+
 
 
 if __name__ == "__main__":
-    check_directory("../../")
-    """
-    sPyNNakerExtraModelsPlugin
-    sPyNNakerExternalDevicesPlugin
-    """
+    check_directory("../../../")

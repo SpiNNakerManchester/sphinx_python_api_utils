@@ -2,6 +2,7 @@ from enum import Enum
 import re
 from doc_exception import DocException
 
+# States the file can be in when reading the next line
 CodeState = Enum(
     value="CODE_STATE",
     names=[
@@ -21,6 +22,7 @@ CodeState = Enum(
         ]
 )
 
+# Error levels
 _CRITICAL = 1
 _WRONG = _CRITICAL + 1
 _HIDDEN = _WRONG + 1
@@ -29,49 +31,69 @@ _MISSING = _UNEXPECTED + 1
 _NO_DOCS = _MISSING + 1
 _STYLE = _NO_DOCS + 1
 
+# Return if no erro found
 OK = None
+
 INIT = "init"
 PRIVATE = "private"
 PUBLIC = "public"
 
 
-def rreplace(s, old, new, occurrence):
+def rreplace(s, old, new, occurrence=-1):
+    """
+    Helper function to do right replace
+
+    :param s: String to replace into
+    :param old: Values being replaced
+    :param new: new Values being inserted
+    :param occurrence: Number of times a replacement should be done
+        Default -1 is to replace all found
+    :return: new String with replacements
+    """
     li = s.rsplit(old, occurrence)
     return new.join(li)
 
 
 class FileDocChecker:
-    """" test for class start
+    """"
+    Sets the Class up to test a file assumes to be python
+    with sphiunx style docstrings
 
     """
 
-    _python_path = None
     _code_state = CodeState.START
     _part_line = ""
     _lineNum = 0
     _param_indent = None
-    _previous_indent = None
     _def_string = ""
     _def_type = None
     _def_params = []
+    _doc_params = []
+    _doc_types = []
+    _def_name = None
+    doc_errors = ""
 
-    def __init__(self, python_path, debug=False):
+    def __init__(self, python_path, kill_on_error=False, debug=False):
         """"
 
         :param python_path: path to file to check
             can be more than one line long
         """
-        print python_path
-        self._python_path = python_path
-        self._debug = debug
+        self.python_path = python_path
+        self.test_class = ((python_path.find("/tests/") > 0) or (
+        python_path.find("/unittests/") > 0) or
+        (python_path.find("/integration_tests/") > 0))
+        self.debug = debug
+        self.kill_on_error = kill_on_error
 
     def check_all_docs(self):
-        with open(self._python_path, "r") as python_file:
+        with open(self.python_path, "r") as python_file:
             for line in python_file:
                 self._check_line(line.rstrip().split("#")[0].rstrip())
+        return self.doc_errors
 
     def _check_line(self, line):
-        if self._debug:
+        if self.debug:
             print line
         self._lineNum += 1
         if line.strip().endswith("\\"):
@@ -111,7 +133,7 @@ class FileDocChecker:
         else:
             print self._code_state
             raise NotImplementedError
-        if self._debug:
+        if self.debug:
             print str(self._lineNum) + "   " + str(self._code_state)
 
     def _check_in_start(self, line):
@@ -213,6 +235,9 @@ class FileDocChecker:
         if (parts[0] != "def"):
             msg = "unexpected start in def declaration"
             return self._report(line, msg, _UNEXPECTED)
+        self._def_name = parts[1]
+        self._doc_params = []
+        self._doc_types = []
         if (parts[1] == "__init__"):
             self._def_type = INIT
         elif (parts[1][0] == "_"):
@@ -265,7 +290,11 @@ class FileDocChecker:
                 print line
                 print parts
                 raise NotImplementedError
+        # Oops no docs
         self._code_state = CodeState.CODE
+        if self._def_type != PRIVATE:
+            msg = "No Docs found for function " + self._def_name
+            return self._report(line, msg, _NO_DOCS)
         return OK
 
     def _check_in_doc_start(self,
@@ -358,7 +387,14 @@ class FileDocChecker:
         if parts[1][-1] != ":":
             if len(parts) > 2:
                 if parts[2][-1] == ":":
-                    return self._verify_param_name(parts[2], line)
+                    check = self._verify_param_name(parts[2], line)
+                    if check == OK:
+                        self._doc_types.append(parts[2][:-1])
+                        if len(parts) == 3:  #: param type name:
+                            msg = "parameter " + parts[2] + " in " + \
+                                  self._def_name + " has no text"
+                            return self._report(line, msg, _MISSING)
+                    return check
             return self._report(line, "paramater name must end with :",
                                 _CRITICAL)
         else:
@@ -371,6 +407,7 @@ class FileDocChecker:
             msg = "param " + name + " not in parameter list " + \
                   str(self._def_params)
             return self._report(line, msg, _CRITICAL)
+        self._doc_params.append(name)
         return OK
 
     def _verify_type(self, line):
@@ -455,47 +492,22 @@ class FileDocChecker:
             return self._end_docs(line)
         return OK
 
-#    def _check_in_param(self, line):
-#        stripped = line.strip()
-#        if len(stripped) == 0:
-#            # self._code_state = CodeState.DOCS_END
-#            return OK
-#        if stripped[0] == ":":
-#            self._code_state = CodeState.DOCS_DECLARATION
-#            return self._check_in_doc_declaration(line)
-#        if stripped[0] == "*":
-#            return OK
-#        if stripped.startswith("http"):
-#            return OK
-#        if stripped.startswith("\"\"\""):
-#            return self._end_docs(line)
-        # return self._report(line, "unexpected :param second line",
-        #                    _CRITICAL)
-
-    # def _check_in_doc_end(self, line):
-    #    stripped = line.strip()
-    #    if stripped.startswith("\"\"\""):
-    #        return self._end_docs(line)
-    #    if stripped.startswith(":param"):
-    #        return self._report(line, ":param after blank line",
-    #                            _HIDDEN)
-    #    if stripped.startswith(":return"):
-    #        return self._report(line, ":return after blank line",
-    #                            _HIDDEN)
-
     def _report(self, line, msg, level):
-        print self._python_path + ":" + str(self._lineNum)
-        print line
-        print msg
-        if level < _MISSING or self._debug:
-            raise DocException(self._python_path, msg, self._lineNum)
-
+        error = self.python_path + ":" + str(self._lineNum) + "  " + msg
+        if not self.test_class:
+            print error
+        if level < _MISSING:
+            if self.kill_on_error:
+                raise DocException(self.python_path, msg, self._lineNum)
+            else:
+                self.doc_errors += error + "\n"
+        return error
 
 if __name__ == "__main__":
     import os
     path = os.path.realpath(__file__)
 
-    path = "/brenninc/spinnaker/spalloc/spalloc/states.py"
-    file_doc_checker = FileDocChecker(path, True);
-    # file_doc_checker = FileDocChecker(path, False)
+    path = "/brenninc/spinnaker/SpiNNMachine/spinn_machine/processor.py"
+    # file_doc_checker = FileDocChecker(path, True);
+    file_doc_checker = FileDocChecker(path, False)
     file_doc_checker.check_all_docs()
