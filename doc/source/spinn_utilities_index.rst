@@ -1,7 +1,7 @@
-SpiNNStorageHandlers
-====================
+SpiNNUtils
+==========
 
-.. automodule:: spinn_storage_handlers
+.. automodule:: spinn_utilities
 
 Contents
 --------
@@ -9,7 +9,7 @@ Contents
 .. toctree::
    :maxdepth: 10
 
-   spinn_storage_handlers/modules.rst
+   spinn_utilities/modules.rst
 
 Indices and tables
 ------------------
@@ -17,3 +17,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

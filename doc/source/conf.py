@@ -358,6 +358,7 @@ def list_module(module_name, exclude = None):
         exclude_path = os.path.join(source, exclude)
         apidoc.main([None, '-o', module_name, source, exclude_path])
 
+list_module("spinn_utilities")
 list_module("spinn_machine")
 list_module("spinn_storage_handlers")
 list_module("spinnman")

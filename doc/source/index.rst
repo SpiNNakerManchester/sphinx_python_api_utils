@@ -4,6 +4,22 @@ These pages document the main Manchester python code for the SpiNNaker_ Project.
 
 .. _SpiNNaker: http://apt.cs.manchester.ac.uk/projects/SpiNNaker/
 
+SpiNNUtils
+----------
+This provides basic utility functions and classes to other parts of SpiNNaker's tooling. Nothing in here knows anything about SpiNNaker functionality.
+
+.. toctree::
+   :maxdepth: 3
+
+   spinn_utilities_index
+
+SpiNNUtils_github_
+
+SpiNNUtils_individual_docs_
+
+.. _SpiNNUtils_github: https://github.com/SpiNNakerManchester/SpiNNUtils
+.. _SpiNNUtils_individual_docs: http://spinnutils.readthedocs.io
+
 SpiNNMachine
 ------------
 This package is used to provide a Python representation of a SpiNNaker machine
