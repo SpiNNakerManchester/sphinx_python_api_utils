@@ -227,6 +227,7 @@ class FileDocChecker:
         declaration = self._def_string.replace("(", " ", 1)
         declaration = rreplace(declaration, ")", " ",1)
         declaration = declaration.replace(",", " ")
+        declaration = declaration.replace('"="', "x")
         declaration = re.sub("\(.*?\)", "junk", declaration)
         declaration = re.sub(' +', ' ', declaration)
         self._def_string = ""
