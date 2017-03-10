@@ -1,50 +1,50 @@
-Module,SpiNNMachine,SpiNNStorageHandlers,SpiNNMan,PACMAN,DataSpecification,spalloc,SpiNNFrontEndCommon,SpiNNakerGraphFrontEnd,sPyNNaker,sPyNNakerExternalDevicesPlugin,sPyNNakerExtraModelsPlugin,sPyNNakerNewModelTemplate,PyNNExamples,IntroLab,merged
-Dependencies,,,"SpiNNMachine, SpiNNStorageHandlers",SpiNNMachine,"SpiNNMachine, SpiNNStorageHandlers",?,"SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker, sPyNNakerExternalDevicesPlugin","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, SpiNNakerGraphFrontEnd, sPyNNaker",
-,,,,,,,,,,,,,,,
-RDC project,y,y,y,y,y,y,y,y,y,y,y,y,N/A,N/a,y
-     maintainers,y,y,y,y,y,y,y,y,y,y,y,y,,,y
-     Requirements file:,y,y,y,y,y,y,y,y,y,y,y,y,,,y
-    Programming Langauge,y,y,y,y,y,y,y,y,y,y,y,y,,,y
-    Install Project,y,y,y,y,y,y,y,y,y,y,y,y,,,n/a
-RDC Main,y,y,y,y,y,y,y,y,y,n,n,n,,,n 
-makefiles,y,y,y,y,y,y,y,y,y,y,y,y,,,y
-source_static,y,y,y,y,y,y,y,y,y,y,y,y,,,y
-source gitignore,y,y,y,y,y,-,y,y,y,y,y,y,,,y
-doc_requirements,y,y,y,y,y,-,y,y,y,y,y,y,,,½
-     not scipy,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a,y,na,y,n/a,,,n/a
-index.rst,y,y,y,y,y,-,y,y,y,y,y,y,,,y
-     links,y,y,y,y,y,-,y,y,y,y,y,y,,,NO
-         project,y,y,y,?,,-,y,y,y,y,,,,,
-         github,y,y,y,y,y,-,y,y,y,y,y,y,,,
-         dependencies,n/a,n/a,y,y,y,-,spalloc,,y,y,y,y,,,
-     Title (inc underscore),y,y,y,y,y,-,y,y,y,y,y,y,,,½
-     automodule,y,y,y,y,y,-,y,y,y,y,y,y,,,
-    contents,y,y,y,y,y,-,y,y,y,y,y,y,,,
-    module?,,,,,,-,,,,,,,,,
-conf.py,y,y,,y,y,-,y,y,y,y,y,y,,,
-    import spinx,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  intersphinx_mapping,n/a,n/a,y,y,y,-,y,y,y,y,y,y,,,
-    io links,,,,,,-,,y,?,y,y,y,,,
-    project,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  copyright,y,y,y,y,y,-,y,y,y,y,y,y,,,
-    htmlhelp_basename,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  latex_documents,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  man_pages,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  texinfo_documents,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  epub_title,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  epub_copyright,y,y,y,y,y,-,y,y,y,y,y,y,,,
-   mock scipy,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a,y,n/a,y,y,,,
-   sys.path,,,,,,,,,y,,y,y,,,
-  rst generation,y,y,y,y,y,-,y,y,y,y,y,y,,,
-  directory,y,y,y,y,y,-,y,y,y,y,y,y,,,
-        Excludes,n/a,n/a,n/a,n/a,y,-,n/a,y,n/a,n/a,n/a,n/a,,,
-   pep8,y,y,y,y,y,-,y,y,,y,y,y,,,
-doc_check_checker,y,y,y,y,y,-,y,y,,y,y,y,,,
-local test,,,,,y,-,y,y,,y,y,y,,,
-RDC doctest,,,,,y,-,y,y,,y,y,Failed,,,
-pull request,y,y,y,y,y,-,y,y,,,,,,,
-Readme,y,y,y,y,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,,
-https://media.readthedocs.org/pdf/sphinx/stable/sphinx.pdfspinnmachine,,,,,,,,,,,,,,,
+Module,SpiNNUtils,SpiNNMachine,SpiNNStorageHandlers,SpiNNMan,PACMAN,DataSpecification,spalloc,SpiNNFrontEndCommon,SpiNNakerGraphFrontEnd,sPyNNaker,sPyNNakerExternalDevicesPlugin,sPyNNakerExtraModelsPlugin,sPyNNakerNewModelTemplate,PyNNExamples,IntroLab,merged
+Dependencies,,,,"SpiNNMachine, SpiNNStorageHandlers",SpiNNMachine,"SpiNNMachine, SpiNNStorageHandlers",?,"SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, sPyNNaker, sPyNNakerExternalDevicesPlugin","SpiNNMachine, SpiNNStorageHandlers, SpiNNMan, PACMAN, DataSpecification, SpiNNFrontEndCommon, SpiNNakerGraphFrontEnd, sPyNNaker",
+,,,,,,,,,,,,,,,,
+RDC project,y,y,y,y,y,y,y,y,y,y,y,y,y,N/A,N/a,y
+     maintainers,y,y,y,y,y,y,y,y,y,y,y,y,y,,,y
+     Requirements file:,y,y,y,y,y,y,y,y,y,y,y,y,y,,,y
+    Programming Langauge,y,y,y,y,y,y,y,y,y,y,y,y,y,,,y
+    Install Project,y,y,y,y,y,y,y,y,y,y,y,y,y,,,n/a
+RDC Main,n,y,y,y,y,y,y,y,y,y,n,n,n,,,n 
+makefiles,y,y,y,y,y,y,y,y,y,y,y,y,y,,,y
+source_static,y,y,y,y,y,y,y,y,y,y,y,y,y,,,y
+source gitignore,y,y,y,y,y,y,-,y,y,y,y,y,y,,,y
+doc_requirements,y,y,y,y,y,y,-,y,y,y,y,y,y,,,½
+     not scipy,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a,y,na,y,n/a,,,n/a
+index.rst,y,y,y,y,y,y,-,y,y,y,y,y,y,,,y
+     links,y,y,y,y,y,y,-,y,y,y,y,y,y,,,NO
+         project,y,y,y,y,?,,-,y,y,y,y,,,,,
+         github,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+         dependencies,n/a,n/a,n/a,y,y,y,-,spalloc,,y,y,y,y,,,
+     Title (inc underscore),y,y,y,y,y,y,-,y,y,y,y,y,y,,,½
+     automodule,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+    contents,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+    module?,,,,,,,-,,,,,,,,,
+conf.py,y,y,y,,y,y,-,y,y,y,y,y,y,,,
+    import spinx,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  intersphinx_mapping,y,n/a,n/a,y,y,y,-,y,y,y,y,y,y,,,
+    io links,,,,,,,-,,y,?,y,y,y,,,
+    project,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  copyright,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+    htmlhelp_basename,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  latex_documents,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  man_pages,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  texinfo_documents,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  epub_title,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  epub_copyright,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+   mock scipy,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a,n/a,y,n/a,y,y,,,
+   sys.path,,,,,,,,,,y,,y,y,,,
+  rst generation,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+  directory,y,y,y,y,y,y,-,y,y,y,y,y,y,,,
+        Excludes,n/a,n/a,n/a,n/a,n/a,y,-,n/a,y,n/a,n/a,n/a,n/a,,,
+   pep8,y,y,y,y,y,y,-,y,y,,y,y,y,,,
+doc_check_checker,y,y,y,y,y,y,-,y,y,,y,y,y,,,
+local test,y,,,,,y,-,y,y,,y,y,y,,,
+RDC doctest,,,,,,y,-,y,y,,y,y,Failed,,,
+pull request,,y,y,y,y,y,-,y,y,,,,,,,
+Readme,,y,y,y,y,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+https://media.readthedocs.org/pdf/sphinx/stable/sphinx.pdfspinnmachine,,,,,,,,,,,,,,,,
