@@ -1,6 +1,8 @@
 from enum import Enum
 import re
 from doc_exception import DocException
+from file_info import FileInfo
+from class_info import ClassInfo
 
 # States the file can be in when reading the next line
 CodeState = Enum(
@@ -11,6 +13,7 @@ CodeState = Enum(
         ("IN_CLASS", "in class"),
         ("AFTER_CLASS", "after class"),
         ("CLASS_DOC", "class doc"),
+        ("IN_SLOTS", "in slots"),
         ("IN_DEF", "def"),
         ("AFTER_DEF", "after def"),
         ("DOCS_START", "doc start"),
@@ -54,7 +57,7 @@ def rreplace(s, old, new, occurrence=-1):
     return new.join(li)
 
 
-class FileDocChecker:
+class FileDocChecker(object):
     """"
     Sets the Class up to test a file assumes to be python
     with sphiunx style docstrings
@@ -71,26 +74,33 @@ class FileDocChecker:
     _doc_params = []
     _doc_types = []
     _def_name = None
-    doc_errors = ""
+    info = None
+    cl_info = None
+    test_class = None
 
-    def __init__(self, python_path, kill_on_error=False, debug=False):
+    def __init__(self, python_path, root = "", kill_on_error=False, debug=False):
         """"
 
         :param python_path: path to file to check
             can be more than one line long
         """
         self.python_path = python_path
-        self.test_class = ((python_path.find("/tests/") > 0) or (
-        python_path.find("/unittests/") > 0) or
-        (python_path.find("/integration_tests/") > 0))
+        self.test_class = ((python_path.find("/tests/") > 0) or
+                           (python_path.find("/unittests/") > 0) or
+                           (python_path.find("\\unittests\\") > 0) or
+                           (python_path.find("/integration_tests/") > 0) or
+                           (python_path.find("\\integration_tests\\") > 0))
         self.debug = debug
         self.kill_on_error = kill_on_error
+        self.info = FileInfo(python_path[len(root):])
 
     def check_all_docs(self):
+        if self.debug:
+            print self.python_path
         with open(self.python_path, "r") as python_file:
             for line in python_file:
                 self._check_line(line.rstrip().split("#")[0].rstrip())
-        return self.doc_errors
+        return self.info
 
     def _check_line(self, line):
         if self.debug:
@@ -114,6 +124,8 @@ class FileDocChecker:
             self._check_after_class(line)
         elif self._code_state == CodeState.CLASS_DOC:
             self._check_in_class_doc(line)
+        elif self._code_state == CodeState.IN_SLOTS:
+            self._check_in_slots(line)
         elif self._code_state == CodeState.IN_DEF:
             self._check_in_def(line)
         elif self._code_state == CodeState.AFTER_DEF:
@@ -166,10 +178,12 @@ class FileDocChecker:
             return self._report(line, msg, _UNEXPECTED)
 
     def _code_check(self, stripped):
-        if stripped.startswith("class"):
+        if stripped.startswith("class "):
             return self._check_in_class(stripped)
         if stripped.startswith("def "):
             return self._check_in_def(stripped)
+        if stripped.startswith("__slots__"):
+            return self._check_in_slots(stripped)
         return OK
 
     def _check_in_code(self, line):
@@ -181,7 +195,9 @@ class FileDocChecker:
 
 
     def _check_in_class(self, line):
+        self._def_string += line
         if line.endswith(":"):
+            self._extract_class_def(line)
             self._code_state = CodeState.AFTER_CLASS
             return OK
         else:
@@ -191,6 +207,36 @@ class FileDocChecker:
                 return self._report(line, msg, _CRITICAL)
             else:
                 return OK
+
+    def _extract_class_def(self, line):
+        if not self.test_class:
+            declaration = self._def_string.replace(" ","")
+            cl_name = declaration[5:declaration.index("(")]
+            if cl_name == "(":
+                print self.python_path + ":" + str(self._lineNum)
+            self.cl_info = ClassInfo.info_by_name(cl_name)
+            if not cl_name.startswith("_"):
+                self.info.add_class(self.cl_info)
+                subs_string = declaration[declaration.index("(")+1:declaration.index(")")]
+                if subs_string.startswith("namedtuple"):
+                    pass
+                elif subs_string.startswith("collections."):
+                    pass
+                else:
+                    subs = subs_string.split(",")
+                    for sub in subs:
+                        self._extract_subs(line, sub)
+        self._def_string = ""
+
+    def _extract_subs(self, line, sub):
+        if sub.startswith("exceptions."):
+            sub = sub[11:]
+        if sub.startswith("_"):
+            print self.python_path + ":" + str(self._lineNum)
+        if sub.startswith("logging."):
+            return
+        else:
+            self.cl_info.add_sub_by_name(sub)
 
     def _check_after_class(self, line):
         if "\"\"\"" in line:
@@ -210,6 +256,26 @@ class FileDocChecker:
         if stripped.startswith(":return"):
             msg = ":return does not make sense in class doc"
             return self._report(line, msg, _UNEXPECTED)
+        return OK
+
+    def _check_in_slots(self, line):
+        self._code_state = CodeState.IN_SLOTS
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            return OK
+        self._def_string += stripped
+        if stripped.endswith(")"):
+            declaration = self._def_string[self._def_string.index("(")+1:-1]
+        elif stripped.endswith("]"):
+            declaration = self._def_string[self._def_string.index("[")+1:-1]
+        else:
+            return OK
+        declaration = declaration.replace(" ", "")
+        declaration = declaration.replace("\"", "")
+        declaration = declaration.replace("'", "")
+        slots = declaration.split(",")
+        self._def_string = ""
+        self._code_state = CodeState.CODE
         return OK
 
     def _check_in_def(self, line):
@@ -232,7 +298,6 @@ class FileDocChecker:
         declaration = re.sub(' +', ' ', declaration)
         self._def_string = ""
         parts = declaration.split(" ")
-        # print parts
         if (parts[0] != "def"):
             msg = "unexpected start in def declaration"
             return self._report(line, msg, _UNEXPECTED)
@@ -271,7 +336,6 @@ class FileDocChecker:
         if (parts[-1] != ":"):
             msg = "No : found at end of def declaration"
             return self._report(line, msg, _UNEXPECTED)
-        # print self._def_params
         return OK
 
     def _check_after_def(self, line):
@@ -370,8 +434,6 @@ class FileDocChecker:
             msg = "Unxpected : line in param doc section"
             return self._report(line, msg, _CRITICAL)
         if indent <= self._param_indent:
-            print self._param_indent
-            print indent
             msg = "Unxpected non indented line in param doc section"
             return self._report(line, msg, _CRITICAL)
         return OK
@@ -480,6 +542,7 @@ class FileDocChecker:
                                     _CRITICAL)
         if parts[1][-1] != ":":
             if len(parts) > 2:
+                print "_verify_return"
                 print parts
                 if len(parts[2]) > 0 and parts[2][-1] == ":":
                     return OK
@@ -496,19 +559,29 @@ class FileDocChecker:
     def _report(self, line, msg, level):
         error = self.python_path + ":" + str(self._lineNum) + "  " + msg
         if not self.test_class:
-            print error
+            # print error
+            pass
         if level < _MISSING:
             if self.kill_on_error:
                 raise DocException(self.python_path, msg, self._lineNum)
             else:
-                self.doc_errors += error + "\n"
+                self.info.add_error(error)
         return error
 
 if __name__ == "__main__":
     import os
     path = os.path.realpath(__file__)
 
-    path = "/brenninc/spinnaker/SpiNNMachine/spinn_machine/processor.py"
+    # path = "/brenninc/spinnaker/SpiNNMachine/spinn_machine/processor.py"
+    path = "C:/Dropbox/spinnaker/PACMAN/pacman/model/graphs/application/impl/application_vertex.py"
     # file_doc_checker = FileDocChecker(path, True);
     file_doc_checker = FileDocChecker(path, False)
-    file_doc_checker.check_all_docs()
+    info = file_doc_checker.check_all_docs()
+    print "Errors"
+    info.print_errors()
+    print info.path
+    info.print_classes()
+    with open("graph.gv","w") as file:
+        file.write("digraph G {\n")
+        info.add_graph_lines(file)
+        file.write("}")
