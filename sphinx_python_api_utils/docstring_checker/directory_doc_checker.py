@@ -1,12 +1,12 @@
 import os
-import sys
 from subprocess import call
 
 from file_doc_checker import FileDocChecker
-from class_info import ClassInfo
+import class_info as class_info
 
 _EXCLUDES = ["va_benchmark.py"]
-_HEAVIES =  ["AbstractHasLabel", "AbstractHasConstraints", "AbstractPopulationSettable","AbstractGeneratesDataSpecification"]
+_OK_EXCLUDES = ["setup.py"]
+
 
 def find_groups_up_and_down(info, found):
     if info in found:
@@ -14,9 +14,10 @@ def find_groups_up_and_down(info, found):
     found.add(info)
     for sub in info.subs:
         find_groups_up_and_down(sub, found)
-    if not info.name in _HEAVIES :
+    if info.state > class_info.STATELESS:
         for super in info.supers:
             find_groups_up_and_down(super, found)
+
 
 def find_groups_up(info, found):
     if info in found:
@@ -24,6 +25,7 @@ def find_groups_up(info, found):
     found.add(info)
     for super in info.supers:
         find_groups_up(super, found)
+
 
 def graph(infos, name, by_subs=True):
     gv_name = name + ".gv"
@@ -35,11 +37,13 @@ def graph(infos, name, by_subs=True):
         file.write("}")
     call(["dot", "-Tpng", gv_name, "-o", png_name])
 
+
 def graph_infos_by_group(infos):
     graph_count = 0
     while len(infos) > 0:
         info = infos[0]
-        if ((len(info.subs)) == 0 and (len(info.supers) ==0)) or (info.name in _HEAVIES):
+        if ((len(info.subs)) == 0 and (len(info.supers) == 0)) or \
+                (info.state <= class_info.STATELESS):
             infos.remove(info)
         else:
             info_group = set()
@@ -50,10 +54,12 @@ def graph_infos_by_group(infos):
                 if gr_info in infos:
                     infos.remove(gr_info)
 
+
 def graph_by_sub(info):
     info_group = set()
     find_groups_up(info, info_group)
     graph(info_group, "subs/" + info.name, by_subs=False)
+
 
 def graph_by_subs(infos):
     sub_infos = set()
@@ -63,6 +69,7 @@ def graph_by_subs(infos):
                 sub_infos.add(sub)
     for sub in sub_infos:
         graph_by_sub(sub)
+
 
 def check_directory(path):
     infos = []
@@ -79,8 +86,11 @@ def check_directory(path):
                 if name.endswith(".py"):
                     if name in _EXCLUDES:
                         print "ignoring: " + name
+                    elif name in _OK_EXCLUDES:
+                        pass
                     else:
-                        fileDocChecker = FileDocChecker(os.path.join(root, name), root=realpath)
+                        fileDocChecker = FileDocChecker(
+                            os.path.join(root, name), root=realpath)
                         info = fileDocChecker.check_all_docs()
                         error = error or info.has_error()
                         infos.append(info)
@@ -116,8 +126,15 @@ def check_directory(path):
         file.write("Class Name,Path\n")
         for info in infos:
             info.add_path_lines(file)
-    graph_infos_by_group(ClassInfo.all_classes())
-    graph_by_subs(ClassInfo.all_classes())
+    all_classes = class_info.ClassInfo.all_classes()
+    info = class_info.ClassInfo.info_by_name("AbstractHasLabel")
+    print info.state
+    for info in all_classes:
+        print info.name + "  " + info.state_name
+        #if info.state <= class_info.STATELESS:
+        #    print info.name
+    graph_infos_by_group(all_classes)
+    graph_by_subs(all_classes)
     # if error:
     #    print "******* ERRORS FOUND **********"
     #    for info in infos:
@@ -128,4 +145,4 @@ def check_directory(path):
 
 if __name__ == "__main__":
     check_directory("../../../")
-    #check_directory("exceptions.py")
+    # check_directory("exceptions.py")
