@@ -21,9 +21,9 @@ class FileInfo(object):
         for class_info in self._classes:
             print class_info.name
 
-    def add_graph_lines(self, file, by_subs=True):
+    def add_graph_lines(self, file):
         for class_info in self._classes:
-            class_info.add_graph_lines(file, by_subs)
+            class_info.add_graph_lines(file, by_supers)
 
     def add_path_lines(self, file):
         for class_info in self._classes:

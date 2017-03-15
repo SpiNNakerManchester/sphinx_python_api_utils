@@ -218,27 +218,27 @@ class FileDocChecker(object):
             self.cl_info = ClassInfo.info_by_name(cl_name)
             if not cl_name.startswith("_"):
                 self.info.add_class(self.cl_info)
-                subs_string = declaration[declaration.index(
+                supers_string = declaration[declaration.index(
                     "(")+1:declaration.index(")")]
-                if subs_string.startswith("namedtuple"):
+                if supers_string.startswith("namedtuple"):
                     pass
-                elif subs_string.startswith("collections."):
+                elif supers_string.startswith("collections."):
                     pass
                 else:
-                    subs = subs_string.split(",")
-                    for sub in subs:
-                        self._extract_subs(line, sub)
+                    supers = supers_string.split(",")
+                    for super in supers:
+                        self._extract_super(line, super)
         self._def_string = ""
 
-    def _extract_subs(self, line, sub):
-        if sub.startswith("exceptions."):
-            sub = sub[11:]
-        if sub.startswith("_"):
+    def _extract_super(self, line, super):
+        if super.startswith("exceptions."):
+            super = super[11:]
+        if super.startswith("_"):
             print self.python_path + ":" + str(self._lineNum)
-        if sub.startswith("logging."):
+        if super.startswith("logging."):
             return
         else:
-            self.cl_info.add_sub_by_name(sub)
+            self.cl_info.add_super_by_name(super)
 
     def _check_after_class(self, line):
         if "\"\"\"" in line:
