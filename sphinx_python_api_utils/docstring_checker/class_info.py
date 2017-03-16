@@ -18,21 +18,32 @@ STATE_NAMES = {MARKER: "Marker", STATELESS: "Stateless", NORMAL: "Normal",
 
 class ClassInfo(object):
 
-    __slots__ = ("_methods", "_name",
+    __slots__ = ("_file_info", "_line", "_methods", "_name",
                  "_slots", "_state", "_supers", "_users")
 
     @staticmethod
-    def info_by_name(name):
+    def info_by_name(name, file_info=None, line=None):
         if name in all_classes_dict:
-            return all_classes_dict[name]
+            info = all_classes_dict[name]
         else:
-            return ClassInfo(name)
+            info = ClassInfo(name)
+        if file_info is not None:
+            info._file_info = file_info
+        if line is not None:
+            info._line = str(line)
+        return info
 
     @staticmethod
     def all_classes():
         return all_classes_dict.values()
 
     def __init__(self, class_name):
+        """
+        :param class_name:
+        :param line:
+        :param file_info:
+        :type file_info: FileInfo
+        """
         self._name = class_name
         self._slots = None
         self._methods = []
@@ -79,6 +90,11 @@ class ClassInfo(object):
                 file.write("\t {} -> {}\n".format(
                     self.gv_name(), super.gv_name()))
         return n_count
+
+    def location(self):
+        if self._file_info is None or self._line is None:
+            return "Unkwon Location"
+        return "{}:{}".format(self._file_info.path, self.line)
 
     @property
     def state(self):
