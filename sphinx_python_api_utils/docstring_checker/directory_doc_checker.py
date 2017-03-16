@@ -1,68 +1,80 @@
 import os
-import sys
 from subprocess import call
 
 from file_doc_checker import FileDocChecker
-from class_info import ClassInfo
+import class_info as class_info
 
 _EXCLUDES = ["va_benchmark.py"]
-_HEAVIES =  ["AbstractHasLabel", "AbstractHasConstraints", "AbstractPopulationSettable","AbstractGeneratesDataSpecification"]
+_OK_EXCLUDES = ["setup.py"]
+
 
 def find_groups_up_and_down(info, found):
     if info in found:
         return
     found.add(info)
-    for sub in info.subs:
-        find_groups_up_and_down(sub, found)
-    if not info.name in _HEAVIES :
-        for super in info.supers:
-            find_groups_up_and_down(super, found)
+    for super in info.supers:
+        find_groups_up_and_down(super, found)
+    if info.state > class_info.STATELESS:
+        for user in info.users:
+            find_groups_up_and_down(user, found)
 
-def find_groups_up(info, found):
+
+def find_groups_up(info, found, base):
     if info in found:
+        if base is not None:
+            print "Diamond found over: {}".format(base.name)
         return
     found.add(info)
-    for super in info.supers:
-        find_groups_up(super, found)
+    for user in info.users:
+        find_groups_up(user, found, base)
 
-def graph(infos, name, by_subs=True):
+
+def graph(infos, name):
     gv_name = name + ".gv"
     png_name = name + ".png"
     with open(gv_name, "w") as file:
+        n_count = 0
         file.write("digraph G {\n")
         for info in infos:
-            info.add_graph_lines(file, by_subs)
+            n_count = info.add_graph_lines(file, n_count)
         file.write("}")
     call(["dot", "-Tpng", gv_name, "-o", png_name])
+
 
 def graph_infos_by_group(infos):
     graph_count = 0
     while len(infos) > 0:
         info = infos[0]
-        if ((len(info.subs)) == 0 and (len(info.supers) ==0)) or (info.name in _HEAVIES):
+        if ((len(info.supers)) == 0 and (len(info.users) == 0)) or \
+                (info.state <= class_info.STATELESS):
             infos.remove(info)
         else:
             info_group = set()
             find_groups_up_and_down(info, info_group)
             graph_count += 1
-            graph(info_group, "subs/graph{}".format(graph_count))
+            graph(info_group, "supers/graph{}".format(graph_count))
             for gr_info in info_group:
                 if gr_info in infos:
                     infos.remove(gr_info)
+#            find_diamond(gr_info)
 
-def graph_by_sub(info):
+
+def graph_by_super(info):
     info_group = set()
-    find_groups_up(info, info_group)
-    graph(info_group, "subs/" + info.name, by_subs=False)
+    if info.state > class_info.STATELESS:
+        base = info
+    else:
+        base = None
+    find_groups_up(info, info_group, base)
+    if (len(info_group) >= 2):
+        graph(info_group, "supers/" + info.name)
 
-def graph_by_subs(infos):
-    sub_infos = set()
+
+def graph_by_supers(infos):
     for info in infos:
-        for sub in info.subs:
-            if len(sub.subs) == 0:
-                sub_infos.add(sub)
-    for sub in sub_infos:
-        graph_by_sub(sub)
+        if len(info.users) > 0:
+            graph_by_super(info)
+
 
 def check_directory(path):
     infos = []
@@ -79,8 +91,11 @@ def check_directory(path):
                 if name.endswith(".py"):
                     if name in _EXCLUDES:
                         print "ignoring: " + name
+                    elif name in _OK_EXCLUDES:
+                        pass
                     else:
-                        fileDocChecker = FileDocChecker(os.path.join(root, name), root=realpath)
+                        fileDocChecker = FileDocChecker(
+                            os.path.join(root, name), root=realpath)
                         info = fileDocChecker.check_all_docs()
                         error = error or info.has_error()
                         infos.append(info)
@@ -116,8 +131,8 @@ def check_directory(path):
         file.write("Class Name,Path\n")
         for info in infos:
             info.add_path_lines(file)
-    graph_infos_by_group(ClassInfo.all_classes())
-    graph_by_subs(ClassInfo.all_classes())
+    graph_infos_by_group(class_info.ClassInfo.all_classes())
+    graph_by_supers(class_info.ClassInfo.all_classes())
     # if error:
     #    print "******* ERRORS FOUND **********"
     #    for info in infos:
@@ -128,4 +143,4 @@ def check_directory(path):
 
 if __name__ == "__main__":
     check_directory("../../../")
-    #check_directory("exceptions.py")
+    # check_directory("exceptions.py")

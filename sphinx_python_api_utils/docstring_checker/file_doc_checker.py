@@ -74,11 +74,12 @@ class FileDocChecker(object):
     _doc_params = []
     _doc_types = []
     _def_name = None
-    info = None
+    _info = None
     cl_info = None
     test_class = None
+    _at_line = None
 
-    def __init__(self, python_path, root = "", kill_on_error=False, debug=False):
+    def __init__(self, python_path, root="", kill_on_error=False, debug=False):
         """"
 
         :param python_path: path to file to check
@@ -184,6 +185,8 @@ class FileDocChecker(object):
             return self._check_in_def(stripped)
         if stripped.startswith("__slots__"):
             return self._check_in_slots(stripped)
+        if stripped.startswith("@"):
+            return self._check_in_at(stripped)
         return OK
 
     def _check_in_code(self, line):
@@ -192,7 +195,6 @@ class FileDocChecker(object):
                                           CodeState.CODE)
         stripped = line.strip()
         return self._code_check(stripped)
-
 
     def _check_in_class(self, line):
         self._def_string += line
@@ -209,34 +211,41 @@ class FileDocChecker(object):
                 return OK
 
     def _extract_class_def(self, line):
-        if not self.test_class:
-            declaration = self._def_string.replace(" ","")
+        if self.test_class:
+            self.cl_info = None
+        else:
+            declaration = self._def_string.replace(" ", "")
             cl_name = declaration[5:declaration.index("(")]
             if cl_name == "(":
                 print self.python_path + ":" + str(self._lineNum)
-            self.cl_info = ClassInfo.info_by_name(cl_name)
+            self.cl_info = ClassInfo.info_by_name(cl_name, self._info, line)
             if not cl_name.startswith("_"):
                 self.info.add_class(self.cl_info)
-                subs_string = declaration[declaration.index("(")+1:declaration.index(")")]
-                if subs_string.startswith("namedtuple"):
+                supers_string = declaration[declaration.index(
+                    "(")+1:declaration.index(")")]
+                if supers_string.startswith("namedtuple"):
                     pass
-                elif subs_string.startswith("collections."):
+                elif supers_string.startswith("collections."):
                     pass
                 else:
-                    subs = subs_string.split(",")
-                    for sub in subs:
-                        self._extract_subs(line, sub)
+                    supers = supers_string.split(",")
+                    for super in supers:
+                        self._extract_super(line, super)
+        if self._at_line is not None:
+            if "ABCMeta" in self._at_line:
+                print "{}:{} ABCMmeta!".format(self.python_path, self._lineNum)
+            self._at_line = None
         self._def_string = ""
 
-    def _extract_subs(self, line, sub):
-        if sub.startswith("exceptions."):
-            sub = sub[11:]
-        if sub.startswith("_"):
+    def _extract_super(self, line, super):
+        if super.startswith("exceptions."):
+            super = super[11:]
+        if super.startswith("_"):
             print self.python_path + ":" + str(self._lineNum)
-        if sub.startswith("logging."):
+        if super.startswith("logging."):
             return
         else:
-            self.cl_info.add_sub_by_name(sub)
+            self.cl_info.add_super_by_name(super)
 
     def _check_after_class(self, line):
         if "\"\"\"" in line:
@@ -270,11 +279,21 @@ class FileDocChecker(object):
             declaration = self._def_string[self._def_string.index("[")+1:-1]
         else:
             return OK
-        declaration = declaration.replace(" ", "")
-        declaration = declaration.replace("\"", "")
-        declaration = declaration.replace("'", "")
-        slots = declaration.split(",")
+        if not self.test_class:
+            declaration = declaration.replace(" ", "")
+            declaration = declaration.replace("\"", "")
+            declaration = declaration.replace("'", "")
+            if len(declaration) == 0:
+                slots = []
+            else:
+                slots = declaration.split(",")
+            self.cl_info.slots = slots
         self._def_string = ""
+        self._code_state = CodeState.CODE
+        return OK
+
+    def _check_in_at(self, stripped):
+        self._at_line = stripped
         self._code_state = CodeState.CODE
         return OK
 
@@ -291,7 +310,7 @@ class FileDocChecker(object):
 
     def _extract_params(self, line):
         declaration = self._def_string.replace("(", " ", 1)
-        declaration = rreplace(declaration, ")", " ",1)
+        declaration = rreplace(declaration, ")", " ", 1)
         declaration = declaration.replace(",", " ")
         declaration = declaration.replace('"="', "x")
         declaration = re.sub("\(.*?\)", "junk", declaration)
@@ -302,6 +321,12 @@ class FileDocChecker(object):
             msg = "unexpected start in def declaration"
             return self._report(line, msg, _UNEXPECTED)
         self._def_name = parts[1]
+        if not self.test_class and self.cl_info is not None:
+            try:
+                self.cl_info.add_method(self._def_name)
+            except Exception as ex:
+                print self.python_path + ":" + str(self._lineNum)
+                raise ex
         self._doc_params = []
         self._doc_types = []
         if (parts[1] == "__init__"):
@@ -336,6 +361,7 @@ class FileDocChecker(object):
         if (parts[-1] != ":"):
             msg = "No : found at end of def declaration"
             return self._report(line, msg, _UNEXPECTED)
+        self._at_line = None
         return OK
 
     def _check_after_def(self, line):
@@ -462,11 +488,10 @@ class FileDocChecker(object):
                                 _CRITICAL)
         else:
             return self._verify_param_name(parts[1], line)
-        return OK
 
     def _verify_param_name(self, name, line):
         name = name[:-1]
-        if not name in self._def_params:
+        if name not in self._def_params:
             msg = "param " + name + " not in parameter list " + \
                   str(self._def_params)
             return self._report(line, msg, _CRITICAL)
@@ -538,15 +563,12 @@ class FileDocChecker(object):
                         return self._report(line, msg, _UNEXPECTED)
                 return OK
             else:
-                return self._report(line, "No space after :return",
-                                    _CRITICAL)
+                return self._report(line, "No space after :return", _WRONG)
         if parts[1][-1] != ":":
             if len(parts) > 2:
-                print "_verify_return"
-                print parts
                 if len(parts[2]) > 0 and parts[2][-1] == ":":
                     return OK
-            return self._report(line, "paramater name must end with :",
+            return self._report(line, "return must end with :",
                                 _MISSING)
         return OK
 
@@ -568,20 +590,22 @@ class FileDocChecker(object):
                 self.info.add_error(error)
         return error
 
+
 if __name__ == "__main__":
     import os
     path = os.path.realpath(__file__)
 
     # path = "/brenninc/spinnaker/SpiNNMachine/spinn_machine/processor.py"
-    path = "C:/Dropbox/spinnaker/PACMAN/pacman/model/graphs/application/impl/application_vertex.py"
+    path = "C:/Dropbox/spinnaker/PACMAN/pacman/model/graphs/application" \
+           "/impl/application_vertex.py"
     # file_doc_checker = FileDocChecker(path, True);
     file_doc_checker = FileDocChecker(path, False)
-    info = file_doc_checker.check_all_docs()
+    _info = file_doc_checker.check_all_docs()
     print "Errors"
-    info.print_errors()
-    print info.path
-    info.print_classes()
-    with open("graph.gv","w") as file:
+    _info.print_errors()
+    print _info.path
+    _info.print_classes()
+    with open("graph.gv", "w") as file:
         file.write("digraph G {\n")
-        info.add_graph_lines(file)
+        _info.add_graph_lines(file)
         file.write("}")
