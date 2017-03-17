@@ -1,5 +1,9 @@
+import importlib
+import pkgutil
 import os
 from subprocess import call
+import sys
+import traceback
 
 from file_doc_checker import FileDocChecker
 import class_info as class_info
@@ -76,6 +80,21 @@ def graph_by_supers(infos):
             graph_by_super(info)
 
 
+def double_dependency_check(infos, root):
+    for info in infos:
+        if len(info.supers) > 1:
+            count = 0
+            for super in info.supers:
+                if super.state > class_info.STATELESS:
+                    count += 1
+            if count > 1:
+                print "DOUBLE!"
+                print root + info.location()
+                for super in info.supers:
+                    if super.state > class_info.STATELESS:
+                        print root + super.location()
+                print
+
 def check_directory(path):
     infos = []
     error = False
@@ -94,8 +113,8 @@ def check_directory(path):
                     elif name in _OK_EXCLUDES:
                         pass
                     else:
-                        fileDocChecker = FileDocChecker(
-                            os.path.join(root, name), root=realpath)
+                        path = os.path.join(root, name)
+                        fileDocChecker = FileDocChecker(path, root=realpath)
                         info = fileDocChecker.check_all_docs()
                         error = error or info.has_error()
                         infos.append(info)
@@ -125,14 +144,44 @@ def check_directory(path):
             # differenc docstring style
             if root.endswith("spalloc_server") and "docs" in dirs:
                 dirs.remove("docs")
+            if "application_generated_data_files" in dirs:
+                dirs.remove("application_generated_data_files")
+            if "reports" in dirs:
+                dirs.remove("reports")
+            if ".git" in dirs:
+                dirs.remove(".git")
+            if "doc" in dirs:
+                dirs.remove("doc")
+            #if ".idea" in dirs:
+            #    dirs.remove(".idea")
+            """
+            for dir in dirs:
+                path = os.path.join(root, dir)
+                #print "===="
+                #print path
+                packages = pkgutil.walk_packages(path=path)
+                for importer, name, is_package in packages:
+                    #print name
+                    try:
+                        mod = importlib.import_module(name)
+                        #print mod
+                    except Exception as ex:
+                        #traceback.print_exc(file=sys.stdout)
+                        print path
+                        print name
+                        print ex
+            """
 
-    print "Writing graphs"
+    print "Writing csv"
     with open("paths.csv", "w") as file:
         file.write("Class Name,Path\n")
         for info in infos:
             info.add_path_lines(file)
-    graph_infos_by_group(class_info.ClassInfo.all_classes())
-    graph_by_supers(class_info.ClassInfo.all_classes())
+    print "checking double depencies"
+    double_dependency_check(class_info.ClassInfo.all_classes(), realpath)
+    print "Writing graphs"
+    #graph_infos_by_group(class_info.ClassInfo.all_classes())
+    #graph_by_supers(class_info.ClassInfo.all_classes())
     # if error:
     #    print "******* ERRORS FOUND **********"
     #    for info in infos:
@@ -143,4 +192,5 @@ def check_directory(path):
 
 if __name__ == "__main__":
     check_directory("../../../")
+    #check_directory("../../")
     # check_directory("exceptions.py")

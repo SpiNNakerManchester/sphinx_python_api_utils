@@ -31,6 +31,7 @@ class ClassInfo(object):
             info._file_info = file_info
         if line is not None:
             info._line = str(line)
+            all_classes_dict[name] = info
         return info
 
     @staticmethod
@@ -50,6 +51,8 @@ class ClassInfo(object):
         self._supers = set()
         self._users = set()
         self._state = None
+        self._file_info = None
+        self._line= None
         all_classes_dict[class_name] = self
 
     def add_method(self, method):
@@ -93,8 +96,8 @@ class ClassInfo(object):
 
     def location(self):
         if self._file_info is None or self._line is None:
-            return "Unkwon Location"
-        return "{}:{}".format(self._file_info.path, self.line)
+            return "Unkown Location " + self.name
+        return "{}:{}".format(self._file_info.path, self._line)
 
     @property
     def state(self):

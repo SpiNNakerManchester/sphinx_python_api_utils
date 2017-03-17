@@ -93,7 +93,7 @@ class FileDocChecker(object):
                            (python_path.find("\\integration_tests\\") > 0))
         self.debug = debug
         self.kill_on_error = kill_on_error
-        self.info = FileInfo(python_path[len(root):])
+        self._info = FileInfo(python_path[len(root):])
 
     def check_all_docs(self):
         if self.debug:
@@ -101,7 +101,7 @@ class FileDocChecker(object):
         with open(self.python_path, "r") as python_file:
             for line in python_file:
                 self._check_line(line.rstrip().split("#")[0].rstrip())
-        return self.info
+        return self._info
 
     def _check_line(self, line):
         if self.debug:
@@ -218,9 +218,10 @@ class FileDocChecker(object):
             cl_name = declaration[5:declaration.index("(")]
             if cl_name == "(":
                 print self.python_path + ":" + str(self._lineNum)
-            self.cl_info = ClassInfo.info_by_name(cl_name, self._info, line)
+            self.cl_info = ClassInfo.info_by_name(cl_name, self._info,
+                                                  self._lineNum)
             if not cl_name.startswith("_"):
-                self.info.add_class(self.cl_info)
+                self._info.add_class(self.cl_info)
                 supers_string = declaration[declaration.index(
                     "(")+1:declaration.index(")")]
                 if supers_string.startswith("namedtuple"):
@@ -587,7 +588,7 @@ class FileDocChecker(object):
             if self.kill_on_error:
                 raise DocException(self.python_path, msg, self._lineNum)
             else:
-                self.info.add_error(error)
+                self._info.add_error(error)
         return error
 
 
