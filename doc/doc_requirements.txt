@@ -1,6 +1,7 @@
 six
 enum34
 lxml
+-e git+https://github.com/SpiNNakerManchester/SpiNNUtils.git@master#egg=spinn_utilities
 -e git+https://github.com/SpiNNakerManchester/SpiNNMachine.git@master#egg=spinn_machine
 -e git+https://github.com/SpiNNakerManchester/SpiNNStorageHandlers.git@master#egg=spinn_storage_handlers
 -e git+https://github.com/SpiNNakerManchester/SpiNNMan.git@master#egg=spinnman
@@ -12,4 +13,3 @@ lxml
 -e git+https://github.com/SpiNNakerManchester/sPyNNaker.git@master#egg=spynnaker
 -e git+https://github.com/SpiNNakerManchester/sPyNNakerExternalDevicesPlugin.git@master#egg=spynnaker_external_devices_plugin
 -e git+https://github.com/SpiNNakerManchester/sPyNNakerExtraModelsPlugin.git@master#egg=spynnaker_extra_pynn_models
--e git+https://github.com/SpiNNakerManchester/SpiNNUtils.git@master#egg=spinn_utilities
