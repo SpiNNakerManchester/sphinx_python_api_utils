@@ -41,9 +41,6 @@ class ClassInfo(object):
     def __init__(self, class_name):
         """
         :param class_name:
-        :param line:
-        :param file_info:
-        :type file_info: FileInfo
         """
         self._name = class_name
         self._slots = None
