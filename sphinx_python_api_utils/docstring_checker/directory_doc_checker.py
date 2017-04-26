@@ -119,22 +119,9 @@ def check_directory(path):
                         error = error or info.has_error()
                         infos.append(info)
 
-            # if "integration_tests" in dirs:
-            #    dirs.remove("integration_tests")
-            # if "intergration_tests" in dirs:
-            #    dirs.remove("intergration_tests")
-            # if "unittests" in dirs:
-            #     dirs.remove("unittests")
-            # if "uinit_test_objects" in dirs:
-            #     dirs.remove("uinit_test_objects")
             # Not ready to check
             if ("my_spinnaker") in dirs:
                 dirs.remove("my_spinnaker")
-            if root.endswith("PACMAN"):
-                if "unittests" in dirs:
-                    dirs.remove("unittests")
-                if "uinit_test_objects" in dirs:
-                    dirs.remove("uinit_test_objects")
             # Not ready to check
             if root.endswith("sPyNNaker"):
                 if "unittests" in dirs:
@@ -182,12 +169,12 @@ def check_directory(path):
     print "Writing graphs"
     #graph_infos_by_group(class_info.ClassInfo.all_classes())
     #graph_by_supers(class_info.ClassInfo.all_classes())
-    # if error:
-    #    print "******* ERRORS FOUND **********"
-    #    for info in infos:
-    #        info.print_errors()
-    #    print "******* ERRORS FOUND **********"
-    #    sys.exit(1)
+    if error:
+        print "******* ERRORS FOUND **********"
+        for info in infos:
+            info.print_errors()
+        print "******* ERRORS FOUND **********"
+        sys.exit(1)
 
 
 if __name__ == "__main__":

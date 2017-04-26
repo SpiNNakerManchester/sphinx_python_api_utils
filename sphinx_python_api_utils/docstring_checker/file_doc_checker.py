@@ -1,5 +1,8 @@
 from enum import Enum
 import re
+import sys
+import traceback
+
 from doc_exception import DocException
 from file_info import FileInfo
 from class_info import ClassInfo
@@ -98,10 +101,17 @@ class FileDocChecker(object):
     def check_all_docs(self):
         if self.debug:
             print self.python_path
-        with open(self.python_path, "r") as python_file:
-            for line in python_file:
-                self._check_line(line.rstrip().split("#")[0].rstrip())
-        return self._info
+        try:
+            with open(self.python_path, "r") as python_file:
+                for line in python_file:
+                    self._check_line(line.rstrip().split("#")[0].rstrip())
+            return self._info
+        except Exception as ex:
+            traceback.print_exc()
+            print "Exception call processing:"
+            print self.python_path + ":" + str(self._lineNum)
+            sys.exit(-1)
+
 
     def _check_line(self, line):
         if self.debug:
@@ -508,6 +518,9 @@ class FileDocChecker(object):
         if len(parts) == 1:
             return self._report(line, ":type requires a param_name: type",
                                 _UNEXPECTED)
+        if len(parts[1]) == 0:
+            return self._report(line, "Double space after :type",
+                                _CRITICAL)
         if parts[1][-1] != ":":
             return self._report(line, "in type paramater_name must end with :",
                                 _CRITICAL)
