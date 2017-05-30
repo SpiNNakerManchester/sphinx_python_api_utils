@@ -158,14 +158,14 @@ def format_directive(module, package=None):
         directive += '    :show-inheritance:\n\n'
 
         _, cls_obj, _, _ = import_by_name(makename(package,
-                "%s.%s" % (module, cls)))
+                                                   "%s.%s" % (module, cls)))
         attributes = get_public_members(cls_obj, 'attribute')
         methods = get_public_members(cls_obj, 'method')
         subclasses = get_public_members(cls_obj, 'class')
         attributes.extend(get_private_superclass_public_members(cls_obj,
-                'attribute'))
+                                                                'attribute'))
         methods.extend(get_private_superclass_public_members(cls_obj,
-                'method'))
+                                                             'method'))
 
         abstract_attrs, real_attrs = split_into_abstract_and_non_abstract(
                 cls_obj, attributes, "__isabstractattribute__")
@@ -195,9 +195,9 @@ def format_directive(module, package=None):
 
 
 def create_module_file(package, module, noheadings, destdir, dryrun, force,
-        suffix):
+                       suffix):
     """Build the text of the file and write the file."""
-    #text += format_heading(2, ':mod:`%s` Module' % module)
+    # text += format_heading(2, ':mod:`%s` Module' % module)
     directive = format_directive(module, package)
     if directive is not None:
         if not noheadings:
@@ -206,12 +206,12 @@ def create_module_file(package, module, noheadings, destdir, dryrun, force,
             text = ''
         text += directive
         write_file(makename(package, module), text, destdir, dryrun, force,
-                suffix)
+                   suffix)
 
 
 def create_package_file(root, master_package, subroot, py_files,
-        separatemodules, noheadings, includeprivate, destdir, dryrun, force,
-        suffix, subs):
+                        separatemodules, noheadings, includeprivate, destdir,
+                        dryrun, force, suffix, subs):
     """Build the text of the file and write the file."""
     text = format_heading(1, '%s package' % makename(master_package, subroot))
 
@@ -246,14 +246,14 @@ def create_package_file(root, master_package, subroot, py_files,
                         filetext = ''
                     filetext += directive
                     write_file(modfile, filetext, destdir, dryrun, force,
-                            suffix)
+                               suffix)
         else:
             for submod in submods:
                 directive = format_directive(makename(subroot, submod),
-                                         master_package)
+                                             master_package)
                 if directive is not None:
                     modfile = makename(master_package, makename(subroot,
-                            submod))
+                                                                submod))
                     if not noheadings:
                         text += format_heading(2, '%s module' % modfile)
                     text += directive
@@ -266,11 +266,11 @@ def create_package_file(root, master_package, subroot, py_files,
         text += directive
 
     write_file(makename(master_package, subroot), text, destdir, dryrun, force,
-            suffix)
+               suffix)
 
 
 def create_modules_toc_file(modules, header, maxdepth, destdir, dryrun, force,
-        suffix, name='modules'):
+                            suffix, name='modules'):
     """Create the module's index."""
     text = format_heading(1, '%s' % header)
     text += '.. toctree::\n'
@@ -302,7 +302,7 @@ def shall_skip(module, includeprivate):
 
 
 def recurse_tree(rootpath, excludes, followlinks, includeprivate,
-        separatemodules, noheadings, destdir, dryrun, force, suffix):
+                 separatemodules, noheadings, destdir, dryrun, force, suffix):
     """
     Look for every file in the directory tree and create the corresponding
     ReST files.
@@ -341,7 +341,7 @@ def recurse_tree(rootpath, excludes, followlinks, includeprivate,
         if is_pkg:
             # we are in a package with something to document
             if subs or len(py_files) > 1 or not \
-                shall_skip(path.join(root, INITPY), includeprivate):
+                    shall_skip(path.join(root, INITPY), includeprivate):
                 subpackage = root[len(rootpath):].lstrip(path.sep).\
                     replace(path.sep, '.')
                 create_package_file(root, root_package, subpackage,
@@ -354,10 +354,10 @@ def recurse_tree(rootpath, excludes, followlinks, includeprivate,
             assert root == rootpath and root_package is None
             for py_file in py_files:
                 if not shall_skip(path.join(rootpath, py_file),
-                        includeprivate):
+                                  includeprivate):
                     module = path.splitext(py_file)[0]
                     create_module_file(root_package, module, noheadings,
-                            destdir, dryrun, force, suffix)
+                                       destdir, dryrun, force, suffix)
                     toplevels.append(module)
 
     return toplevels
@@ -382,9 +382,9 @@ def is_excluded(root, excludes):
 
 
 def make_rst(rootpath, excludes, destdir, header=None, suffix="rst",
-        full=False, author="Author", version="", release="", maxdepth=4,
-        dryrun=False, followlinks=False, includeprivate=False,
-        separatemodules=True, noheadings=False, force=False, notoc=False):
+             full=False, author="Author", version="", release="", maxdepth=4,
+             dryrun=False, followlinks=False, includeprivate=False,
+             separatemodules=True, noheadings=False, force=False, notoc=False):
     """ Make a set of RST files for the modules starting at rootpath
     """
 
@@ -410,7 +410,8 @@ def make_rst(rootpath, excludes, destdir, header=None, suffix="rst",
     rootpath = path.normpath(path.abspath(rootpath))
     excludes = normalize_excludes(rootpath, excludes)
     modules = recurse_tree(rootpath, excludes, followlinks, includeprivate,
-            separatemodules, noheadings, destdir, dryrun, force, suffix)
+                           separatemodules, noheadings, destdir, dryrun, force,
+                           suffix)
     if full:
         from sphinx import quickstart as qs
         modules.sort()
@@ -443,7 +444,8 @@ def make_rst(rootpath, excludes, destdir, header=None, suffix="rst",
             qs.generate(d, silent=True, overwrite=force)
     elif not notoc:
         create_modules_toc_file(modules, header, maxdepth, destdir, dryrun,
-                force, suffix)
+                                force, suffix)
+
 
 if __name__ == "__main__":
 
@@ -509,6 +511,6 @@ Note: By default this script will not overwrite already created files.""")
     if not opts.destdir:
         parser.error('An output directory is required.')
     make_rst(rootpath, excludes, opts.destdir, opts.header, opts.suffix,
-            opts.full, opts.author, opts.version, opts.release, opts.maxdepth,
-            opts.dryrun, opts.followlinks, opts.includeprivate,
-            opts.separatemodules, opts.noheadings, opts.force, opts.notoc)
+             opts.full, opts.author, opts.version, opts.release, opts.maxdepth,
+             opts.dryrun, opts.followlinks, opts.includeprivate,
+             opts.separatemodules, opts.noheadings, opts.force, opts.notoc)
